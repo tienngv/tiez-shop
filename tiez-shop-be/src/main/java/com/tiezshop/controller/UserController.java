@@ -1,14 +1,11 @@
 package com.tiezshop.controller;
 
-import com.tiezshop.controller.dto.request.LoginRequest;
+
 import com.tiezshop.controller.dto.request.RegisterRequest;
 import com.tiezshop.controller.dto.response.DataResponse;
 import com.tiezshop.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +16,11 @@ public class UserController {
     @PostMapping("/register")
     public DataResponse register(@RequestBody RegisterRequest registerRequest) {
         return userService.registerUser(registerRequest);
+    }
+
+    @GetMapping("/users")
+    public DataResponse getAllUsers() {
+        return userService.getAllUsers();
     }
 
 //    @PostMapping("/login")

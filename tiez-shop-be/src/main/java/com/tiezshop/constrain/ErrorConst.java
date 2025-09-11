@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ErrorConst {
     NOT_FOUND("404","Not Found"),
+    UNAUTHENTICATED("401","Unauthenticated"),
     BAD_REQUEST("400","Bad Request"),
     SUCCESS("200","Success"),
     VALIDATION("400","Invalid data input"),

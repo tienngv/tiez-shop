@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -25,5 +24,5 @@ public class UserResponse {
     private String email;
     private String phone;
     private String avatar;
-    private Set<String> roles;
+
 }

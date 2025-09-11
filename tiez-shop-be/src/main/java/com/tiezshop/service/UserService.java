@@ -6,6 +6,6 @@ import com.tiezshop.controller.dto.response.DataResponse;
 
 public interface UserService {
     DataResponse registerUser(RegisterRequest registerRequest);
-
+    DataResponse getAllUsers();
     DataResponse loginUser(LoginRequest loginRequest);
 }

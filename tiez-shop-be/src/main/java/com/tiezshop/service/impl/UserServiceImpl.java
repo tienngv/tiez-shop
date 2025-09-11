@@ -8,6 +8,7 @@ import com.tiezshop.controller.dto.identity.UserCreationRequest;
 import com.tiezshop.controller.dto.request.LoginRequest;
 import com.tiezshop.controller.dto.request.RegisterRequest;
 import com.tiezshop.controller.dto.response.DataResponse;
+import com.tiezshop.controller.dto.response.UserResponse;
 import com.tiezshop.controller.mapper.UserMapper;
 import com.tiezshop.entity.User;
 import com.tiezshop.exception.TiezShopException;
@@ -24,6 +25,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -48,7 +50,6 @@ public class UserServiceImpl implements UserService {
                 .firstName(registerRequest.getFirstName())
                 .lastName(registerRequest.getLastName())
                 .email(registerRequest.getEmail())
-                .dob(registerRequest.getDob())
                 .enabled(true)
                 .emailVerified(false)
                 .credentials(List.of(Credential.builder()
@@ -76,6 +77,12 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return new DataResponse(ErrorConst.SUCCESS, Map.of("userId", userId));
+    }
+
+    @Override
+    public DataResponse getAllUsers() {
+        List<UserResponse> response = userRepository.findAll().stream().map(userMapper::toDto).collect(Collectors.toList());
+        return new DataResponse(ErrorConst.SUCCESS, response);
     }
 
     @Override
