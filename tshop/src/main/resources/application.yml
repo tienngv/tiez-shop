@@ -1,0 +1,44 @@
+server:
+  port: 8080
+spring:
+  datasource:
+    url: jdbc:p6spy:postgresql://localhost:5432/tshop?currentSchema=public
+    driver-class-name: com.p6spy.engine.spy.P6SpyDriver
+    username: postgres
+    password: 123@
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 995288177296-f2n9codtgdkmq0r5pr6i2oj25tfg5ohf.apps.googleusercontent.com
+            client-secret:
+            redirect-uri: "http://localhost:8080/login/oauth2/code/google"
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+jwt:
+  secret: "aVeryVeryLongSecretKeyThatIsAtLeast64BytesLongAndSecureEnoughForHS512Algorithm1234567890"
+  expiration: 86400000
+keycloak:
+  auth-server-url: http://localhost:8080/auth
+  realm: myrealm
+  resource: myclient
+  public-client: true
