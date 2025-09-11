@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,11 +20,13 @@ public class User extends BaseEntity {
     @Column(updatable = false, nullable = false)
     private UUID id;
 
+    private String userId;
+
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
     @Column(nullable = false)
-    private String passwordHash;
+    private String password;
 
     @Column(unique = true, length = 100)
     private String email;
@@ -33,8 +36,13 @@ public class User extends BaseEntity {
 
     @Column(length = 30)
     private String firstName;
+
     @Column(length = 30)
     private String lastName;
+
+    @Column
+    private LocalDate dob;
+
     @Column(length = 100)
     private String fullName;
 
@@ -51,6 +59,8 @@ public class User extends BaseEntity {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+
+
     private Set<Role> roles;
 
     public enum UserStatus {

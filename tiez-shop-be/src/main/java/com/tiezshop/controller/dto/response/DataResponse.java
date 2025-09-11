@@ -18,7 +18,6 @@ import java.util.Map;
 @Builder
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class DataResponse {
     private String errorCode;
     private String timestamp;

@@ -59,9 +59,9 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
                 .body(new DataResponse(ErrorConst.BAD_REQUEST.getErrCode(), ex.getMessage()));
     }
 
-    @ExceptionHandler(TShopException.class)
-    public ResponseEntity<Object> handleGpayException(TShopException ex) {
-        log.error("[EXCEPTION TShopException] : {}", ex.getMessage());
+    @ExceptionHandler(TiezShopException.class)
+    public ResponseEntity<Object> handleGpayException(TiezShopException ex) {
+        log.error("[EXCEPTION TiezShopException] : {}", ex.getMessage());
         DataResponse err = DataResponse.builder()
                 .errorCode(ex.getErrorCode())
                 .message(ex.getMessage())

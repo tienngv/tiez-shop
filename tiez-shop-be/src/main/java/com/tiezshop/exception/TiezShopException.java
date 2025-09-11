@@ -1,8 +1,6 @@
 package com.tiezshop.exception;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import com.tiezshop.constrain.ErrorConst;
 import lombok.Getter;
@@ -12,23 +10,23 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+//@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class TShopException extends RuntimeException {
+public class TiezShopException extends RuntimeException {
 
     private final String errorCode;
     private final String message;
     private final String timestamp;
     private final transient Object data;
 
-    public TShopException(ErrorConst err) {
+    public TiezShopException(ErrorConst err) {
         this.errorCode = err.getErrCode();
         this.message = err.getMessage();
         this.data = null;
         this.timestamp = String.valueOf(LocalDateTime.now());
     }
 
-    public TShopException(String errorCode, String message) {
+    public TiezShopException(String errorCode, String message) {
         this.errorCode = errorCode;
         this.message = message;
         this.data = null;
@@ -36,7 +34,7 @@ public class TShopException extends RuntimeException {
 
     }
 
-    public TShopException(String errorCode, String message, Object data) {
+    public TiezShopException(String errorCode, String message, Object data) {
         this.errorCode = errorCode;
         this.message = message;
         this.data = data;
