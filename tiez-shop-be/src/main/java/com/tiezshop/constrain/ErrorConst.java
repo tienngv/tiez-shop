@@ -5,12 +5,12 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum ErrorConst {
-    NOT_FOUND("404","Not Found"),
-    UNAUTHENTICATED("401","Unauthenticated"),
-    BAD_REQUEST("400","Bad Request"),
-    SUCCESS("200","Success"),
-    VALIDATION("400","Invalid data input"),
-    UNKNOWN("500","Unknown error");
+    NOT_FOUND("4123","Not Found"),
+    UNAUTHENTICATED("4124","Unauthenticated"),
+    BAD_REQUEST("4125","Bad Request"),
+    VALIDATION("4126","Invalid data input"),
+    SUCCESS("222","Success"),
+    UNKNOWN("999","Unknown error");
 
     private final String errCode;
     private final String message;

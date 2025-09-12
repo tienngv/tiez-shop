@@ -2,10 +2,10 @@ server:
   port: 8080
 spring:
   datasource:
-    url: jdbc:p6spy:postgresql://localhost:5433/tshop?currentSchema=public
+    url: jdbc:p6spy:postgresql://localhost:5555/tshop?currentSchema=public
     driver-class-name: com.p6spy.engine.spy.P6SpyDriver
     username: postgres
-    password: 123@
+    password: 123456
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,9 +23,12 @@ logging:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 keycloak:
-  client-id: tiez_shop
-  client-secret: vTaT5bzOzh36aqTcdb2uGNTuxPUcv4lV
+  client-id: tienngv
+  client-secret: 6eRqOoKNobwIoRTwLWg3JX3uz7Opl6hc
   realm: tiez-shop
   base-url: http://localhost:8180
   registration-url: "${keycloak.base-url}/admin/realms/${keycloak.realm}/users"
   token-url: "${keycloak.base-url}/realms/${keycloak.realm}/protocol/openid-connect/token"
+  assign-role-url: "/admin/realms/${keycloak.realm}/users/{userId}/role-mappings/realm"
+
+#123123

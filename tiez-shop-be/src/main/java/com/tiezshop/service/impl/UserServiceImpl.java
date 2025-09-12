@@ -1,17 +1,21 @@
 package com.tiezshop.service.impl;
 
+import com.google.gson.Gson;
 import com.tiezshop.configurations.security.KeycloakProperties;
 import com.tiezshop.constrain.ErrorConst;
 import com.tiezshop.controller.dto.identity.Credential;
 import com.tiezshop.controller.dto.identity.TokenExchangeResponse;
 import com.tiezshop.controller.dto.identity.UserCreationRequest;
+import com.tiezshop.controller.dto.request.AssignRolesToUserRequest;
 import com.tiezshop.controller.dto.request.LoginRequest;
 import com.tiezshop.controller.dto.request.RegisterRequest;
-import com.tiezshop.controller.dto.response.DataResponse;
+import com.tiezshop.controller.dto.request.RoleRequest;
 import com.tiezshop.controller.dto.response.UserResponse;
 import com.tiezshop.controller.mapper.UserMapper;
+import com.tiezshop.entity.Role;
 import com.tiezshop.entity.User;
-import com.tiezshop.exception.TiezShopException;
+import com.tiezshop.exception.AppException;
+import com.tiezshop.repository.RoleRepository;
 import com.tiezshop.repository.UserRepository;
 
 import com.tiezshop.service.UserService;
@@ -19,10 +23,14 @@ import lombok.RequiredArgsConstructor;
 
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.*;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -32,17 +40,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final UserMapper userMapper;
     private final KeycloakProperties keycloakProperties;
     private final BaseRestTemplate baseRestTemplate;
-    private String accessToken;
-    private Instant expiresAt;
+    private final Gson gson;
 
     @Override
-    public DataResponse registerUser(RegisterRequest registerRequest) {
-        String token = getToken();
+    public String registerUser(RegisterRequest registerRequest) {
+        String token = baseRestTemplate.getToken();
         if (token.isEmpty()) {
-            throw new TiezShopException(ErrorConst.BAD_REQUEST.getErrCode(), "Token is empty");
+            throw new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "Token is empty");
         }
 
         UserCreationRequest userCreationRequest = UserCreationRequest.builder()
@@ -62,71 +70,87 @@ public class UserServiceImpl implements UserService {
         var responseEntity = baseRestTemplate.callRestApi(
                 keycloakProperties.getRegistrationUrl(),
                 HttpMethod.POST,
-                getHeaders(token),
+                baseRestTemplate.getHeaders(token),
                 userCreationRequest,
                 Object.class
         );
 
         String location = (responseEntity != null) ? responseEntity.getHeaders().getFirst("Location") : null;
         if (location == null) {
-            throw new TiezShopException(ErrorConst.BAD_REQUEST.getErrCode(), "Registration failed - no Location header");
+            throw new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "Registration failed - no Location header");
         }
         String userId = location.substring(location.lastIndexOf("/") + 1);
         User user = userMapper.toEntity(registerRequest);
         user.setUserId(userId);
         userRepository.save(user);
+        log.info("User '{}' created successfully in Keycloak with ID: {}", registerRequest.getUsername(), userId);
 
-        return new DataResponse(ErrorConst.SUCCESS, Map.of("userId", userId));
+        return user.getUserId();
     }
 
     @Override
-    public DataResponse getAllUsers() {
-        List<UserResponse> response = userRepository.findAll().stream().map(userMapper::toDto).collect(Collectors.toList());
-        return new DataResponse(ErrorConst.SUCCESS, response);
+    public void assignRolesToUser(AssignRolesToUserRequest request) {
+        String token = baseRestTemplate.getToken();
+        User user = userRepository.findById(request.getUserId()).orElseThrow(() -> new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "User not found"));
+        List<RoleRequest> rolesToAssign = new ArrayList<>();
+        if (request.getRoleIds() != null) {
+            request.getRoleIds().forEach(roleId -> {
+                Role role = roleRepository.findById(roleId).orElseThrow(() ->
+                        new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "Role with ID " + roleId + " not found"));
+                user.getRoles().add(role);
+                rolesToAssign.add(RoleRequest.builder().id(role.getId()).name(role.getName()).build());
+            });
+        }
+        deleteRolesToUserKeyCloak(user.getUserId(), token);
+        assignRolesToUserKeyCloak(user.getUserId(), rolesToAssign, token);
+        log.info("Assign Roles To UserId : {}, Request :[{}]", user.getUserId(), gson.toJson(request));
+        userRepository.saveAndFlush(user);
+    }
+
+    private void assignRolesToUserKeyCloak(String userId, List<RoleRequest> roles, String token) {
+        ResponseEntity<Object> response = baseRestTemplate.callRestApi(
+                keycloakProperties.getAssignRoleUrl().replace("{userId}", userId),
+                HttpMethod.POST,
+                baseRestTemplate.getHeaders(token),
+                roles,
+                Object.class
+        );
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "Roles assignment failed");
+        }
+    }
+
+    private void deleteRolesToUserKeyCloak(String userId, String token) {
+        ResponseEntity<Object> response = baseRestTemplate.callRestApi(
+                keycloakProperties.getAssignRoleUrl().replace("{userId}", userId),
+                HttpMethod.DELETE,
+                baseRestTemplate.getHeaders(token),
+                null,
+                Object.class
+        );
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "Delete Roles in keycloak failed");
+        }
     }
 
     @Override
-    public DataResponse loginUser(LoginRequest loginRequest) {
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream().map(userMapper::toDto).toList();
+    }
+
+    @Override
+    public UserResponse getDetailUser() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();
+        var user = userRepository.findByUserId(userId).orElseThrow(
+                () -> new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "User not found")
+        );
+        return userMapper.toDto(user);
+    }
+
+    @Override
+    public UserResponse loginUser(LoginRequest loginRequest) {
         return null;
     }
 
-    public synchronized String getToken() {
-        if (accessToken != null && expiresAt != null && Instant.now().isBefore(expiresAt.minusSeconds(30))) {
-            return accessToken;
-        }
-        HttpHeaders header = new HttpHeaders();
-        header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-        LinkedMultiValueMap<String, String> body = new LinkedMultiValueMap<>();
-        body.add("grant_type", "client_credentials");
-        body.add("scope", "openid");
-        body.add("client_id", keycloakProperties.getClientId());
-        body.add("client_secret", keycloakProperties.getClientSecret());
-
-        var response = baseRestTemplate.callRestApi(
-                keycloakProperties.getTokenUrl(),
-                HttpMethod.POST,
-                header,
-                body,
-                TokenExchangeResponse.class
-        ).getBody();
-
-        if (response != null && response.getAccessToken() != null) {
-            this.accessToken = response.getAccessToken();
-            long expiresIn = response.getExpiresIn() != null ? response.getExpiresIn() : 300;
-            this.expiresAt = Instant.now().plusSeconds(expiresIn);
-
-            return accessToken;
-        }
-
-        throw new TiezShopException(ErrorConst.BAD_REQUEST.getErrCode(), "Cannot fetch access token from Keycloak");
-    }
-
-
-    private HttpHeaders getHeaders(String token) {
-        HttpHeaders header = new HttpHeaders();
-        header.setContentType(MediaType.APPLICATION_JSON);
-        header.setBearerAuth(token);
-        return header;
-    }
 }

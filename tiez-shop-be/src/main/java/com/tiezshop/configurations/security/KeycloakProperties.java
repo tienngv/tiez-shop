@@ -13,6 +13,8 @@ public class KeycloakProperties {
     private String clientId;
     private String clientSecret;
     private String tokenUrl;
+    private String roleUrl;
     private String registrationUrl;
     private String realm;
+    private String assignRoleUrl;
 }

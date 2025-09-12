@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class TokenExchangeResponse {
     private String accessToken;
     private Long expiresIn;
-    private String refreshExpiresIn;
+    private Long refreshExpiresIn;
     private String tokenType;
     private String idToken;
     private String scope;

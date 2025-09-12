@@ -13,14 +13,17 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "roles")
-public class Role extends BaseEntity{
+public class Role extends BaseEntity {
     @Id
     @GeneratedValue
     @Column(updatable = false, nullable = false)
     private UUID id;
 
+    @Column(unique = true, nullable = false)
+    private String roleId;
+
     @Column(nullable = false, unique = true, length = 50)
-    private String code;
+    private String name;
 
     @Column(columnDefinition = "TEXT")
     private String description;
