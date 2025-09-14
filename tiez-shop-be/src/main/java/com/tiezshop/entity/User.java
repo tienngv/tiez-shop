@@ -6,21 +6,18 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.Set;
-import java.util.UUID;
+import java.util.List;
+
 
 @Entity
-@Table(name = "users")
 @Getter
 @Setter
+@Table(name = "users")
 public class User extends BaseEntity {
 
     @Id
-    @GeneratedValue
     @Column(updatable = false, nullable = false)
-    private UUID id;
-
-    private String userId;
+    private String id;
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
@@ -29,7 +26,7 @@ public class User extends BaseEntity {
     private String email;
 
     @Column(length = 20)
-    private String phone;
+    private String phoneNumber;
 
     @Column(length = 30)
     private String firstName;
@@ -56,7 +53,7 @@ public class User extends BaseEntity {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles;
+    private List<Role> roles;
 
     public enum UserStatus {
         ACTIVE, INACTIVE, BLOCKED

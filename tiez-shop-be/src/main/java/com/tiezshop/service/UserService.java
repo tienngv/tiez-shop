@@ -1,16 +1,26 @@
 package com.tiezshop.service;
 
-import com.tiezshop.controller.dto.request.AssignRolesToUserRequest;
-import com.tiezshop.controller.dto.request.LoginRequest;
-import com.tiezshop.controller.dto.request.RegisterRequest;
+import com.tiezshop.controller.dto.request.*;
+import com.tiezshop.controller.dto.response.LoginResponse;
 import com.tiezshop.controller.dto.response.UserResponse;
+import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface UserService {
     String registerUser(RegisterRequest registerRequest);
-    List<UserResponse> getAllUsers();
+    LoginResponse login(LoginRequest loginRequest);
+
+    void updateUser(String userId, UpdateUserRequest registerRequest);
+
+    void deleteUser(String userId);
+
+    Page<UserResponse> getUsers(String search, LocalDateTime createdTimeFrom, LocalDateTime createdTimeTo, List<String> roleIds, int page, int size);
+
     void assignRolesToUser(AssignRolesToUserRequest request);
-    UserResponse getDetailUser();
-    UserResponse loginUser(LoginRequest loginRequest);
+
+    UserResponse getDetailUser(String userId);
+
+    void changePassword(ChangePasswordRequest request);
 }

@@ -15,6 +15,9 @@
         <module name="tiez-shop-be" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="tiez-shop" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">

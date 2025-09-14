@@ -11,6 +11,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class AssignRolesToUserRequest {
-    private UUID userId;
-    private List<UUID> roleIds;
+    private String userId;
+    private List<String> roleIds;
 }

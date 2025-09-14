@@ -35,7 +35,8 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
             var value = err.getDefaultMessage();
             error.put(key, value);
         }
-        DataResponse<Object> response = DataResponse.builder().result(error).build();
+        DataResponse<Object> response = DataResponse.builder()
+                .errorCode(ErrorConst.BAD_REQUEST.getErrCode()).result(error).build();
         return new ResponseEntity<>(response, headers, HttpStatus.BAD_REQUEST);
     }
 
@@ -50,7 +51,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<Object> handleJsonProcessingException(JsonProcessingException ex) {
         log.error("[EXCEPTION JSON format error] : [{} , time {}]", ex.getOriginalMessage(), LocalDateTime.now(), ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(DataResponse.builder().errorCode(ErrorConst.UNKNOWN.getErrCode()).message(ex.getLocalizedMessage()).build());
+                .body(DataResponse.builder().errorCode(ErrorConst.JSON_PARSE_ERROR.getErrCode()).message(ex.getLocalizedMessage()).build());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -58,7 +59,7 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         log.error("[EXCEPTION IllegalArgumentException] : {}", ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(DataResponse.builder().errorCode(ErrorConst.UNKNOWN.getErrCode()).message(ex.getLocalizedMessage()).build());
+                .body(DataResponse.builder().errorCode(ErrorConst.INVALID_INPUT.getErrCode()).message(ex.getLocalizedMessage()).build());
     }
 
     @ExceptionHandler(AppException.class)

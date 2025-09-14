@@ -6,9 +6,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ErrorConst {
     NOT_FOUND("4123","Not Found"),
-    UNAUTHENTICATED("4124","Unauthenticated"),
+    UNAUTHORIZED("4124","UNAUTHORIZED"),
     BAD_REQUEST("4125","Bad Request"),
-    VALIDATION("4126","Invalid data input"),
+    CONFLICT("4126","Conflict Error"),
+    INVALID_INPUT("4126","Invalid data input"),
+    JSON_PARSE_ERROR("4127","JSON Parse Error"),
     SUCCESS("222","Success"),
     UNKNOWN("999","Unknown error");
 

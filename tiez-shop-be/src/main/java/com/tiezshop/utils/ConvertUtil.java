@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.protobuf.Message;
-import com.google.protobuf.util.JsonFormat;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.IOException;
@@ -109,12 +108,6 @@ public class ConvertUtil {
     }
 
 
-    public static JsonNode convertProtoRpToJsonNode(Message protoResponse) throws IOException {
-        String jsonString = JsonFormat.printer()
-                .includingDefaultValueFields()
-                .print(protoResponse);
-        return mapper.readTree(jsonString);
-    }
 
     public static JsonNode convertSnakeToCamel(JsonNode node) {
         if (node.isObject()) {

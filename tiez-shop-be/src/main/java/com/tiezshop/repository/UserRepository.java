@@ -1,14 +1,22 @@
 package com.tiezshop.repository;
 
 import com.tiezshop.entity.User;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.UUID;
+
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, String>, JpaSpecificationExecutor<User> {
     Optional<User> findByUsername(String username);
-    Optional<User> findByUserId(String userId);
+
+    boolean existsByUsername(String username);
+
+    boolean existsByEmail(String email);
+
+
 }

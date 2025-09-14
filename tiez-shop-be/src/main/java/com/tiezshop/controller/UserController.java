@@ -1,54 +1,111 @@
 package com.tiezshop.controller;
 
 
-import com.tiezshop.controller.dto.request.AssignRolesToUserRequest;
-import com.tiezshop.controller.dto.request.RegisterRequest;
+import com.tiezshop.controller.dto.request.*;
 import com.tiezshop.controller.dto.response.DataResponse;
+import com.tiezshop.controller.dto.response.LoginResponse;
 import com.tiezshop.controller.dto.response.UserResponse;
 
 import com.tiezshop.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("auth")
+@RequestMapping("user")
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
     private final UserService userService;
 
+    @Operation(summary = "Đăng ký", tags = "API - [USER]")
     @PostMapping("/register")
-    public DataResponse<String> register(@RequestBody RegisterRequest registerRequest) {
+    public DataResponse<String> register(@RequestBody @Valid RegisterRequest registerRequest) {
         return DataResponse.<String>builder()
-                .result(userService.registerUser(registerRequest))
-                .build();
+                .result(userService.registerUser(registerRequest)).build();
     }
 
-    @GetMapping("/users")
-    public DataResponse<List<UserResponse>> getAllUsers() {
-        return DataResponse.<List<UserResponse>>builder()
-                .result(userService.getAllUsers())
-                .build();
+    @Operation(summary = "Đăng nhập", tags = "API - [USER]")
+    @PostMapping("/login")
+    public DataResponse<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
+        return DataResponse.<LoginResponse>builder()
+                .result(userService.login(request)).build();
     }
 
-    @GetMapping("/detail")
-    public DataResponse<UserResponse> getUserDetail() {
+    @Operation(summary = "Cập nhật", tags = "API - [USER]")
+    @PutMapping("/{id}")
+    public DataResponse<Void> updateUser(@PathVariable String id, @RequestBody UpdateUserRequest updateRequest) {
+        userService.updateUser(id, updateRequest);
+        return DataResponse.<Void>builder().build();
+    }
+
+    @Operation(summary = "Lấy thông tin chi tiết", tags = "API - [USER]")
+    @GetMapping("/{id}")
+    public DataResponse<UserResponse> getUserDetail(@PathVariable String id) {
         return DataResponse.<UserResponse>builder()
-                .result(userService.getDetailUser())
-                .build();
+                .result(userService.getDetailUser(id)).build();
     }
 
+    @Operation(summary = "Xóa", tags = "API - [USER]")
+    @DeleteMapping("/{id}")
+    public DataResponse<Void> deleteUser(@PathVariable String id) {
+        userService.deleteUser(id);
+        return DataResponse.<Void>builder().build();
+    }
+
+    @Operation(summary = "Đổi mật khẩu", tags = "API - [USER]")
+    @PostMapping("/change-pass")
+    public DataResponse<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
+        userService.changePassword(request);
+        return DataResponse.<Void>builder().build();
+    }
+
+    @Operation(summary = "Cập nhật Roles", tags = "API - [USER]")
     @PostMapping("/assign-roles")
-    public DataResponse<Object> assignRoles(AssignRolesToUserRequest request) {
+    public DataResponse<Object> assignRoles(@RequestBody AssignRolesToUserRequest request) {
         userService.assignRolesToUser(request);
         return DataResponse.builder()
-                .message(String.format("Assign roles user %s success", request.getUserId()))
+                .message(String.format("Assign roles user %s success", request.getUserId())).build();
+    }
+
+    @Operation(summary = "Danh sách - Paging", tags = "API - [USER]")
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/search")
+    public DataResponse<Page<UserResponse>> getUsers(@RequestParam(required = false) String keyword,
+                                                     @RequestParam(required = false) Long createdTimeFrom,
+                                                     @RequestParam(required = false) Long createdTimeTo,
+                                                     @RequestParam(required = false) List<String> roleIds,
+                                                     @RequestParam(defaultValue = "0") int page,
+                                                     @RequestParam(defaultValue = "10") int size
+    ) {
+        LocalDateTime from = null;
+        LocalDateTime to = null;
+
+        if (createdTimeFrom != null) {
+            from = Instant.ofEpochMilli(createdTimeFrom)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+        }
+
+        if (createdTimeTo != null) {
+            to = Instant.ofEpochMilli(createdTimeTo)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+        }
+        Page<UserResponse> response = userService.getUsers(keyword, from, to, roleIds, page, size);
+        return DataResponse.<Page<UserResponse>>builder()
+                .message("Search users success")
+                .result(response)
                 .build();
     }
 
-//    @PostMapping("/login")
-//    public DataResponse login(@RequestBody LoginRequest request) {
-//        return userService.registerUser(registerRequest);
-//    }
 }

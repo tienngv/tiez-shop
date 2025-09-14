@@ -1,5 +1,6 @@
 package com.tiezshop.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,14 +14,11 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "roles")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Role extends BaseEntity {
     @Id
-    @GeneratedValue
     @Column(updatable = false, nullable = false)
-    private UUID id;
-
-    @Column(unique = true, nullable = false)
-    private String roleId;
+    private String id;
 
     @Column(nullable = false, unique = true, length = 50)
     private String name;

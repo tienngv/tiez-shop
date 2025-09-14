@@ -18,17 +18,30 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8180/realms/tiez-shop
+#  redis:
+#    host: localhost
+#    port: 6379
+#    password: # (tùy chọn, nếu Redis yêu cầu mật khẩu)
+#    database: 0
+#    cache:
+#      type: redis
+#      redis:
+#        time-to-live: 600000 # Thời gian sống của cache (ms, ví dụ: 10 phút)
+#        cache-null-values: false # Không lưu giá trị null vào cache
+#  elasticsearch:
+#    uris: http://localhost:9200
+#    username: elastic
+#    password: 780TnZdfArPwgiX0OsZS
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 keycloak:
   client-id: tienngv
-  client-secret: 6eRqOoKNobwIoRTwLWg3JX3uz7Opl6hc
+  client-secret: bBnCGpKNDa2rhgBz81NZi3KFedJ1ftLu
   realm: tiez-shop
   base-url: http://localhost:8180
   registration-url: "${keycloak.base-url}/admin/realms/${keycloak.realm}/users"
   token-url: "${keycloak.base-url}/realms/${keycloak.realm}/protocol/openid-connect/token"
-  assign-role-url: "/admin/realms/${keycloak.realm}/users/{userId}/role-mappings/realm"
-
-#123123
+  assign-role-url: "${keycloak.base-url}/admin/realms/${keycloak.realm}/users/{userId}/role-mappings/realm"
+  role-url: "${keycloak.base-url}/admin/realms/${keycloak.realm}/roles"

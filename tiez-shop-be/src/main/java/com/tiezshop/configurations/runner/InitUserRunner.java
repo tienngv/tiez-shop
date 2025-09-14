@@ -1,7 +1,7 @@
 //package com.tiezshop.configurations.runner;
 //
 //import com.tienngv.security.entity.User;
-//import com.tienngv.security.request.UserDto;
+//import com.tienngv.security.request.RegisterRequest;
 //import com.tienngv.security.service.UserService;
 //import lombok.RequiredArgsConstructor;
 //import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@
 //    @Override
 //    public void run(String... args) {
 //        if (!userService.existsByUsername("admin")) {
-//            UserDto userDto = new UserDto();
+//            RegisterRequest userDto = new RegisterRequest();
 //            userDto.setFullName("Nguyen Gia Viet Tien");
 //            userDto.setUsername("admin");
 //            userDto.setPassword("123456");

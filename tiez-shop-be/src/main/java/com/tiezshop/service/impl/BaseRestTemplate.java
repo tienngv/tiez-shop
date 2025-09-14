@@ -38,24 +38,24 @@ public class BaseRestTemplate {
                 ? new HttpEntity<>(requestBody, headers)
                 : new HttpEntity<>(headers);
 
-        try {
-            ResponseEntity<T> response = restTemplate.exchange(url, method, entity, responseType);
+//        try {
+        ResponseEntity<T> response = restTemplate.exchange(url, method, entity, responseType);
 
-            String requestLog = serializeSafely(requestBody);
-            String responseLog = serializeSafely(response.getBody());
-            log.info("[call url: {}] request: [{}] response: [{}]", url, requestLog, responseLog);
+        String requestLog = serializeSafely(requestBody);
+        String responseLog = serializeSafely(response.getBody());
+        log.info("[call url: {}] request: [{}] response: [{}]", url, requestLog, responseLog);
 
-            return response;
-        } catch (HttpStatusCodeException ex) {
-            log.error("[err call url: {}], request [{}], response: [{}]",
-                    url, serializeSafely(requestBody), ex.getResponseBodyAsString());
-            throw new AppException(String.valueOf(ex.getStatusCode().value()), ex.getResponseBodyAsString());
-        } catch (Exception e) {
-            log.error("[err call url: {}] request [{}] exception: [{}]",
-                    url, serializeSafely(requestBody), e.getMessage(), e);
-            throw new AppException(ErrorConst.UNKNOWN.toString(),
-                    "Error connect to domain " + url + ": " + e.getMessage());
-        }
+        return response;
+//        } catch (HttpStatusCodeException ex) {
+//            log.error("[err call url: {}], request [{}], response: [{}]",
+//                    url, serializeSafely(requestBody), ex.getResponseBodyAsString());
+//            throw new AppException(String.valueOf(ex.getStatusCode().value()), ex.getResponseBodyAsString());
+//        } catch (Exception e) {
+//            log.error("[err call url: {}] request [{}] exception: [{}]",
+//                    url, serializeSafely(requestBody), e.getMessage(), e);
+//            throw new AppException(ErrorConst.UNKNOWN.toString(),
+//                    "Error connect to domain " + url + ": " + e.getMessage());
+//        }
     }
 
     public HttpHeaders getHeaders(String token) {
