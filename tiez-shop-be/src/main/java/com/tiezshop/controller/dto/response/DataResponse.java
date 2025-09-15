@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class DataResponse<T> {
     @Builder.Default
-    private String errorCode = "999";
+    private String errorCode = "2000";
     @Builder.Default
     private String timestamp = LocalDateTime.now().toString();
     private String message;

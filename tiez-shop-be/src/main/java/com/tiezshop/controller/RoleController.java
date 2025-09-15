@@ -7,6 +7,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import java.util.List;
 public class RoleController {
     private final RoleService roleService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Tạo mới", tags = "API - [ROLE]")
     @PostMapping("/role")
     public DataResponse<String> createRole(@RequestBody @Valid RoleDto request) {
@@ -26,7 +29,9 @@ public class RoleController {
 
     @Operation(summary = "Lấy toàn bộ", tags = "API - [ROLE]")
     @GetMapping("/roles")
+    @PreAuthorize("hasRole('ADMIN')")
     public DataResponse<List<RoleDto>> getAll() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
         return DataResponse.<List<RoleDto>>builder()
                 .result(roleService.getAll()).build();
     }

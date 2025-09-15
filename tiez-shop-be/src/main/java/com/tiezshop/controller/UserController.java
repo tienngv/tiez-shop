@@ -15,9 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 
 @RestController
@@ -48,6 +45,7 @@ public class UserController {
         return DataResponse.<Void>builder().build();
     }
 
+    @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Lấy thông tin chi tiết", tags = "API - [USER]")
     @GetMapping("/{id}")
     public DataResponse<UserResponse> getUserDetail(@PathVariable String id) {

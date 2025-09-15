@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -52,6 +53,15 @@ public class ErrorHandler extends ResponseEntityExceptionHandler {
         log.error("[EXCEPTION JSON format error] : [{} , time {}]", ex.getOriginalMessage(), LocalDateTime.now(), ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(DataResponse.builder().errorCode(ErrorConst.JSON_PARSE_ERROR.getErrCode()).message(ex.getLocalizedMessage()).build());
+    }
+
+    @ExceptionHandler(value = AccessDeniedException.class)
+    ResponseEntity<Object> handlingAccessDeniedException(AccessDeniedException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(DataResponse.builder()
+                        .errorCode(ErrorConst.UNAUTHORIZED.getErrCode())
+                        .message(exception.getMessage())
+                        .build());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
