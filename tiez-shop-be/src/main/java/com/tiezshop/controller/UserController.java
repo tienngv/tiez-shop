@@ -87,21 +87,7 @@ public class UserController {
                                                      @RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "10") int size
     ) {
-        LocalDateTime from = null;
-        LocalDateTime to = null;
-
-        if (createdTimeFrom != null) {
-            from = Instant.ofEpochMilli(createdTimeFrom)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
-        }
-
-        if (createdTimeTo != null) {
-            to = Instant.ofEpochMilli(createdTimeTo)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDateTime();
-        }
-        Page<UserResponse> response = userService.getUsers(keyword, from, to, roleIds, page, size);
+        Page<UserResponse> response = userService.getUsers(keyword, createdTimeFrom, createdTimeTo, roleIds, page, size);
         return DataResponse.<Page<UserResponse>>builder()
                 .message("Search users success")
                 .result(response)

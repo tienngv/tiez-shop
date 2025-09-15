@@ -30,7 +30,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -332,8 +334,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<UserResponse> getUsers(String keyword, LocalDateTime createdTimeFrom, LocalDateTime createdTimeTo, List<String> roleIds, int page, int size) {
+    public Page<UserResponse> getUsers(String keyword, Long createdTimeFrom, Long createdTimeTo, List<String> roleIds, int page, int size) {
         try {
+            LocalDateTime from = null;
+            LocalDateTime to = null;
+
+            if (createdTimeFrom != null) {
+                from = Instant.ofEpochMilli(createdTimeFrom)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+            }
+
+            if (createdTimeTo != null) {
+                to = Instant.ofEpochMilli(createdTimeTo)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDateTime();
+            }
+
             // Validate roleIds
             if (roleIds != null && !roleIds.isEmpty()) {
                 List<Role> roles = roleRepository.findAllById(roleIds);
@@ -346,7 +363,7 @@ public class UserServiceImpl implements UserService {
 
             PageRequest pageable = PageRequest.of(page, size);
             Page<User> userPage = userRepository.findAll(
-                    UserSpecification.filter(keyword, createdTimeFrom, createdTimeTo, roleIds),
+                    UserSpecification.filter(keyword, from, to, roleIds),
                     pageable
             );
 

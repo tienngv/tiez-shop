@@ -10,13 +10,14 @@ import java.util.List;
 
 public interface UserService {
     String registerUser(RegisterRequest registerRequest);
+
     LoginResponse login(LoginRequest loginRequest);
 
     void updateUser(String userId, UpdateUserRequest registerRequest);
 
     void deleteUser(String userId);
 
-    Page<UserResponse> getUsers(String search, LocalDateTime createdTimeFrom, LocalDateTime createdTimeTo, List<String> roleIds, int page, int size);
+    Page<UserResponse> getUsers(String search, Long createdTimeFrom, Long createdTimeTo, List<String> roleIds, int page, int size);
 
     void assignRolesToUser(AssignRolesToUserRequest request);
 

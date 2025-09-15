@@ -19,7 +19,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.LocaleResolver;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -37,19 +36,6 @@ public class CommonConfigs {
         return resolver;
     }
 
-
-
-//    @Bean
-//    public RedisCacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
-//        RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
-//                .entryTtl(Duration.ofMinutes(10)) // Cache sống trong 10 phút
-//                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(
-//                        new GenericJackson2JsonRedisSerializer())); // Sử dụng JSON để serialize
-//
-//        return RedisCacheManager.builder(redisConnectionFactory)
-//                .cacheDefaults(cacheConfiguration)
-//                .build();
-//    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
