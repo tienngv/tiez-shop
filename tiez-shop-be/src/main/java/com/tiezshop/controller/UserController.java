@@ -19,8 +19,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("user")
-@SecurityRequirement(name = "bearerAuth")
+@RequestMapping("/api/user")
 public class UserController {
     private final UserService userService;
 
@@ -31,22 +30,17 @@ public class UserController {
                 .result(userService.registerUser(registerRequest)).build();
     }
 
-    @Operation(summary = "Đăng nhập", tags = "API - [USER]")
-    @PostMapping("/login")
-    public DataResponse<LoginResponse> login(@RequestBody @Valid LoginRequest request) {
-        return DataResponse.<LoginResponse>builder()
-                .result(userService.login(request)).build();
-    }
-
     @Operation(summary = "Cập nhật", tags = "API - [USER]")
+    @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/{id}")
     public DataResponse<Void> updateUser(@PathVariable String id, @RequestBody UpdateUserRequest updateRequest) {
         userService.updateUser(id, updateRequest);
         return DataResponse.<Void>builder().build();
     }
 
-    @PreAuthorize("hasRole('USER')")
+//    @PreAuthorize("hasRole('USER')")
     @Operation(summary = "Lấy thông tin chi tiết", tags = "API - [USER]")
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/{id}")
     public DataResponse<UserResponse> getUserDetail(@PathVariable String id) {
         return DataResponse.<UserResponse>builder()
@@ -54,6 +48,7 @@ public class UserController {
     }
 
     @Operation(summary = "Xóa", tags = "API - [USER]")
+    @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/{id}")
     public DataResponse<Void> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
@@ -61,6 +56,7 @@ public class UserController {
     }
 
     @Operation(summary = "Đổi mật khẩu", tags = "API - [USER]")
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/change-pass")
     public DataResponse<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
         userService.changePassword(request);
@@ -68,6 +64,7 @@ public class UserController {
     }
 
     @Operation(summary = "Cập nhật Roles", tags = "API - [USER]")
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/assign-roles")
     public DataResponse<Object> assignRoles(@RequestBody AssignRolesToUserRequest request) {
         userService.assignRolesToUser(request);
@@ -77,6 +74,7 @@ public class UserController {
 
     @Operation(summary = "Danh sách - Paging", tags = "API - [USER]")
     @PreAuthorize("hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/search")
     public DataResponse<Page<UserResponse>> getUsers(@RequestParam(required = false) String keyword,
                                                      @RequestParam(required = false) Long createdTimeFrom,

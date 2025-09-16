@@ -3,7 +3,9 @@ import { useAuthStore } from '../stores/auth.js'
 
 // Import components
 import Home from '../views/Home.vue'
-import Login from '../views/Login.vue'
+import Register from '../views/Register.vue'
+import Callback from '../views/Callback.vue'
+import Logout from '../views/Logout.vue'
 import Products from '../views/Products.vue'
 import ProductDetail from '../views/ProductDetail.vue'
 import Cart from '../views/Cart.vue'
@@ -17,9 +19,19 @@ const routes = [
     component: Home
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: Login
+    path: '/register',
+    name: 'Register',
+    component: Register
+  },
+  {
+    path: '/callback',
+    name: 'Callback',
+    component: Callback
+  },
+  {
+    path: '/logout',
+    name: 'Logout',
+    component: Logout
   },
   {
     path: '/products',
@@ -62,7 +74,14 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
+    // Redirect directly to Keycloak instead of login page
+    const keycloakUrl = `http://localhost:8180/realms/tiez-shop/protocol/openid-connect/auth?` +
+      `client_id=tienngv&` +
+      `redirect_uri=${encodeURIComponent('http://localhost:5173/callback')}&` +
+      `response_type=code&` +
+      `scope=openid`
+    
+    window.location.href = keycloakUrl
   } else {
     next()
   }

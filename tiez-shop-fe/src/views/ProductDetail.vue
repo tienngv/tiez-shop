@@ -1,7 +1,11 @@
 <template>
   <div class="product-detail">
     <div v-if="loading" class="loading">
-      <p>Đang tải...</p>
+      <LoadingSpinner message="Đang tải sản phẩm..." />
+    </div>
+    
+    <div v-else-if="error" class="error-container">
+      <ErrorMessage :message="error" @retry="loadProduct" />
     </div>
     
     <div v-else-if="product" class="product-container">
@@ -29,11 +33,11 @@
         
         <div class="product-price">
           <span class="current-price">{{ formatPrice(product.price) }}</span>
-          <span v-if="product.originalPrice" class="original-price">
+          <span v-if="product.originalPrice && product.originalPrice > product.price" class="original-price">
             {{ formatPrice(product.originalPrice) }}
           </span>
-          <span v-if="product.discount" class="discount">
-            -{{ product.discount }}%
+          <span v-if="product.isOnSale" class="discount">
+            -{{ Math.round(product.discountPercentage) }}%
           </span>
         </div>
         
@@ -45,7 +49,7 @@
         <div class="product-specs">
           <h3>Thông số kỹ thuật</h3>
           <ul>
-            <li v-for="spec in product.specifications" :key="spec.name">
+            <li v-for="spec in specifications" :key="spec.name">
               <strong>{{ spec.name }}:</strong> {{ spec.value }}
             </li>
           </ul>
@@ -101,77 +105,68 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart.js'
+import { productApi } from '../services/api.js'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorMessage from '../components/ErrorMessage.vue'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 
 const loading = ref(true)
+const error = ref(null)
 const quantity = ref(1)
+const product = ref(null)
 const productImages = ref([])
 
-// Mock data - trong thực tế sẽ lấy từ API
-const products = ref([
-  {
-    id: 1,
-    name: 'Nike Air Force 1',
-    price: 2890000,
-    originalPrice: 3290000,
-    discount: 12,
-    image: 'https://via.placeholder.com/500x400?text=Nike+Air+Force+1',
-    description: 'Nike Air Force 1 là một trong những mẫu giày thể thao cổ điển nhất của Nike. Với thiết kế đơn giản nhưng đầy phong cách, đây là lựa chọn hoàn hảo cho mọi phong cách thời trang.',
-    category: 'shoes',
-    brand: 'Nike',
-    rating: 4.8,
-    reviews: 1250,
-    specifications: [
-      { name: 'Thương hiệu', value: 'Nike' },
-      { name: 'Dòng sản phẩm', value: 'Air Force 1' },
-      { name: 'Chất liệu', value: 'Da tổng hợp cao cấp' },
-      { name: 'Đế giày', value: 'Air-Sole unit' },
-      { name: 'Màu sắc', value: 'Trắng cổ điển' },
-      { name: 'Kích thước', value: '36-45' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Adidas Ultraboost 22',
-    price: 4590000,
-    originalPrice: 4990000,
-    discount: 8,
-    image: 'https://via.placeholder.com/500x400?text=Adidas+Ultraboost+22',
-    description: 'Adidas Ultraboost 22 là đỉnh cao của công nghệ giày chạy bộ với Boost midsole và Primeknit upper. Được thiết kế cho những vận động viên nghiêm túc.',
-    category: 'shoes',
-    brand: 'Adidas',
-    rating: 4.9,
-    reviews: 890,
-    specifications: [
-      { name: 'Thương hiệu', value: 'Adidas' },
-      { name: 'Dòng sản phẩm', value: 'Ultraboost 22' },
-      { name: 'Chất liệu', value: 'Primeknit + Boost' },
-      { name: 'Đế giày', value: 'Boost midsole' },
-      { name: 'Màu sắc', value: 'Core Black' },
-      { name: 'Kích thước', value: '36-45' }
-    ]
+// Load product details from API
+const loadProduct = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await productApi.getProductById(route.params.id)
+    
+    if (response.result) {
+      product.value = {
+        id: response.result.id,
+        name: response.result.name,
+        price: response.result.price,
+        originalPrice: response.result.originalPrice,
+        discountPercentage: response.result.discountPercentage,
+        isOnSale: response.result.isOnSale,
+        description: response.result.description,
+        brand: response.result.brand?.name || 'Unknown',
+        category: response.result.category?.name || 'Unknown',
+        color: response.result.color,
+        size: response.result.size,
+        material: response.result.material,
+        gender: response.result.gender,
+        viewCount: response.result.viewCount,
+        soldCount: response.result.soldCount,
+        rating: 4.5, // Mock rating for now
+        reviews: Math.floor(Math.random() * 1000) + 100 // Mock reviews count
+      }
+      
+      // Set up product images
+      if (response.result.images && response.result.images.length > 0) {
+        productImages.value = response.result.images.map(img => img.imageUrl)
+        product.value.image = productImages.value[0]
+      } else {
+        productImages.value = ['https://via.placeholder.com/500x400?text=No+Image']
+        product.value.image = productImages.value[0]
+      }
+    }
+  } catch (err) {
+    console.error('Error loading product:', err)
+    error.value = 'Không thể tải thông tin sản phẩm'
+  } finally {
+    loading.value = false
   }
-])
-
-const product = computed(() => {
-  return products.value.find(p => p.id === parseInt(route.params.id))
-})
+}
 
 onMounted(() => {
-  // Simulate loading
-  setTimeout(() => {
-    loading.value = false
-    if (product.value) {
-      productImages.value = [
-        product.value.image,
-        'https://via.placeholder.com/500x400?text=iPhone+15+Pro+Back',
-        'https://via.placeholder.com/500x400?text=iPhone+15+Pro+Side'
-      ]
-    }
-  }, 1000)
+  loadProduct()
 })
 
 const setMainImage = (imageUrl) => {
@@ -210,6 +205,34 @@ const buyNow = () => {
   addToCart()
   router.push('/cart')
 }
+
+// Computed properties for specifications
+const specifications = computed(() => {
+  if (!product.value) return []
+  
+  const specs = [
+    { name: 'Thương hiệu', value: product.value.brand },
+    { name: 'Danh mục', value: product.value.category }
+  ]
+  
+  if (product.value.color) {
+    specs.push({ name: 'Màu sắc', value: product.value.color })
+  }
+  
+  if (product.value.size) {
+    specs.push({ name: 'Kích thước', value: product.value.size })
+  }
+  
+  if (product.value.material) {
+    specs.push({ name: 'Chất liệu', value: product.value.material })
+  }
+  
+  if (product.value.gender) {
+    specs.push({ name: 'Giới tính', value: product.value.gender })
+  }
+  
+  return specs
+})
 </script>
 
 <style scoped>
@@ -217,11 +240,6 @@ const buyNow = () => {
   padding: 2rem 0;
 }
 
-.loading {
-  text-align: center;
-  padding: 3rem;
-  color: #7f8c8d;
-}
 
 .product-container {
   display: grid;

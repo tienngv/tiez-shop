@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { initKeycloak, isAuthenticated, getUserInfo, getToken, resetKeycloak } from '../services/keycloak.js'
-import { tokenUtils } from '../utils/tokenUtils.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -18,45 +16,59 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async () => {
     loading.value = true
     try {
-      // Check if we have a valid token in localStorage first
+      // Check if we have a valid token in localStorage
       const existingToken = localStorage.getItem('access_token')
       if (existingToken) {
-        const tokenInfo = tokenUtils.getTokenInfo(existingToken)
-        console.log('Existing token info:', tokenInfo)
-        
-        if (!tokenInfo.valid) {
-          console.log('Existing token is invalid, clearing...', tokenInfo.error)
-          clearOldTokens()
+        // Simple token validation - check if it's not expired
+        try {
+          const tokenParts = existingToken.split('.')
+          if (tokenParts.length === 3) {
+            const payload = JSON.parse(atob(tokenParts[1]))
+            const now = Math.floor(Date.now() / 1000)
+            
+            if (payload.exp && payload.exp > now) {
+              // Token is still valid
+              token.value = existingToken
+              isLoggedIn.value = true
+              
+              // Try to get user info from token
+              if (payload.sub) {
+                user.value = {
+                  sub: payload.sub,
+                  name: payload.name || payload.preferred_username,
+                  email: payload.email,
+                  preferred_username: payload.preferred_username,
+                  roles: payload.realm_access?.roles || ['customer']
+                }
+              }
+              
+              console.log('User authenticated with existing token')
+              return
+            }
+          }
+        } catch (e) {
+          console.log('Token validation failed:', e)
         }
       }
       
-      const authenticated = await initKeycloak()
-      if (authenticated) {
-        user.value = getUserInfo()
-        token.value = getToken()
-        isLoggedIn.value = true
-        
-        // Lưu token vào localStorage để sử dụng cho API calls
-        if (token.value) {
-          localStorage.setItem('access_token', token.value)
-          console.log('Token saved to localStorage:', token.value.substring(0, 20) + '...')
-        }
-      } else {
-        // Clear any existing tokens if not authenticated
-        clearOldTokens()
-        console.log('Not authenticated, user needs to login')
-      }
-    } catch (error) {
-      console.error('Keycloak initialization failed:', error)
+      // No valid token found
       clearOldTokens()
-      // Don't throw error, just log it and continue
+      console.log('No valid token found, user needs to login')
+    } catch (error) {
+      console.error('Auth initialization failed:', error)
+      clearOldTokens()
     } finally {
       loading.value = false
     }
   }
 
   const clearOldTokens = () => {
-    resetKeycloak()
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('keycloak_token')
+    user.value = null
+    token.value = null
+    isLoggedIn.value = false
     console.log('All tokens and state cleared')
   }
 

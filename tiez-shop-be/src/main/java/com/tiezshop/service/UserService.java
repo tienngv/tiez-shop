@@ -11,8 +11,6 @@ import java.util.List;
 public interface UserService {
     String registerUser(RegisterRequest registerRequest);
 
-    LoginResponse login(LoginRequest loginRequest);
-
     void updateUser(String userId, UpdateUserRequest registerRequest);
 
     void deleteUser(String userId);

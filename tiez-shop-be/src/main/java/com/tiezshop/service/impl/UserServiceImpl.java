@@ -49,7 +49,6 @@ public class UserServiceImpl implements UserService {
     private final Gson gson;
 
     @Override
-    @Transactional
     public String registerUser(RegisterRequest registerRequest) {
         if (userRepository.existsByUsername(registerRequest.getUsername())) {
             throw new AppException(ErrorConst.CONFLICT.getErrCode(), "Tên người dùng '" + registerRequest.getUsername() + "' đã tồn tại");
@@ -100,65 +99,6 @@ public class UserServiceImpl implements UserService {
 
         return userId;
     }
-
-    @Override
-    @Transactional
-    public LoginResponse login(LoginRequest loginRequest) {
-        try {
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.add("grant_type", "password");
-            formData.add("client_id", keycloakProperties.getClientId());
-            formData.add("client_secret", keycloakProperties.getClientSecret());
-            formData.add("username", loginRequest.getUsername());
-            formData.add("password", loginRequest.getPassword());
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-
-            ResponseEntity<JsonNode> response = baseRestTemplate.callRestApi(
-                    keycloakProperties.getTokenUrl(),
-                    HttpMethod.POST,
-                    headers,
-                    formData,
-                    JsonNode.class
-            );
-
-            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                log.error("Failed to authenticate with Keycloak for username: {}", loginRequest.getUsername());
-                throw new AppException(ErrorConst.UNAUTHORIZED.getErrCode(), "Tên người dùng hoặc mật khẩu không đúng");
-            }
-
-            JsonNode tokenResponse = response.getBody();
-            String accessToken = tokenResponse.get("access_token").asText();
-            String refreshToken = tokenResponse.get("refresh_token").asText();
-            long expiresIn = tokenResponse.get("expires_in").asLong();
-            String tokenType = tokenResponse.get("token_type").asText();
-
-            User user = userRepository.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new AppException(ErrorConst.BAD_REQUEST.getErrCode(), "Không tìm thấy người dùng"));
-            if (user.getStatus() == User.UserStatus.BLOCKED) {
-                log.error("Login attempt for blocked user: {}", loginRequest.getUsername());
-                throw new AppException(ErrorConst.UNAUTHORIZED.getErrCode(), "Tài khoản của bạn đã bị khóa");
-            }
-
-            return LoginResponse.builder()
-                    .accessToken(accessToken)
-                    .refreshToken(refreshToken)
-                    .expiresIn(expiresIn)
-                    .tokenType(tokenType)
-                    .build();
-        } catch (HttpClientErrorException e) {
-            log.error("Keycloak authentication error: {}", e.getMessage());
-            if (e.getStatusCode().value() == 401) {
-                throw new AppException(ErrorConst.UNAUTHORIZED.getErrCode(), "Đăng nhập thất bại: Tên người dùng hoặc mật khẩu không đúng");
-            }
-            throw new AppException(ErrorConst.UNKNOWN.getErrCode(), "Đăng nhập thất bại: " + e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error during login: {}", e.getMessage());
-            throw new AppException(ErrorConst.UNKNOWN.getErrCode(), "Đăng nhập thất bại: " + e.getMessage());
-        }
-    }
-
 
     @Override
     @Transactional

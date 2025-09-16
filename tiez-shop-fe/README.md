@@ -1,162 +1,206 @@
 # TiezShop Frontend
 
-Dự án shop thời trang trực tuyến với Vue.js và tích hợp đăng nhập Keycloak.
+Frontend cho ứng dụng TiezShop được xây dựng bằng Vue 3 với tích hợp đầy đủ với backend Spring Boot.
 
-## Tính năng
+## 🚀 Tính năng chính
 
-- 🛍️ **Shop bán hàng**: Trang chủ, danh sách sản phẩm, chi tiết sản phẩm
-- 🛒 **Giỏ hàng**: Thêm/xóa sản phẩm, cập nhật số lượng
-- 🔐 **Xác thực**: Đăng nhập với Keycloak và demo account
-- 👤 **Quản lý người dùng**: Profile, đơn hàng, cài đặt
-- 📱 **Responsive**: Giao diện thân thiện trên mọi thiết bị
+### 🛍️ Quản lý sản phẩm
+- **Trang chủ**: Hiển thị sản phẩm nổi bật từ API
+- **Danh sách sản phẩm**: Tìm kiếm, lọc theo thương hiệu, danh mục, giá, giới tính
+- **Chi tiết sản phẩm**: Thông tin đầy đủ, hình ảnh, thông số kỹ thuật
+- **Phân trang**: Hỗ trợ phân trang với navigation
 
-## Công nghệ sử dụng
+### 🏷️ Quản lý thương hiệu và danh mục
+- **Dropdown thương hiệu**: Tự động load từ API
+- **Bộ lọc động**: Categories và brands được load từ backend
+- **Navigation thông minh**: URL parameters cho deep linking
 
-- **Vue 3** - Framework JavaScript
-- **Vue Router** - Routing
+### 🛒 Giỏ hàng và người dùng
+- **Giỏ hàng**: Thêm/xóa sản phẩm, quản lý số lượng
+- **Xác thực**: Tích hợp Keycloak cho đăng nhập/đăng ký
+- **Profile**: Quản lý thông tin cá nhân
+
+### 🎨 UI/UX
+- **Responsive Design**: Tối ưu cho desktop, tablet, mobile
+- **Loading States**: Spinner và error handling
+- **Modern UI**: Thiết kế hiện đại với animations
+- **Accessibility**: Hỗ trợ keyboard navigation
+
+## 🛠️ Công nghệ sử dụng
+
+- **Vue 3** - Framework chính
+- **Vue Router 4** - Client-side routing
 - **Pinia** - State management
-- **Keycloak JS** - Authentication
 - **Axios** - HTTP client
+- **Keycloak JS** - Authentication
 - **Vite** - Build tool
 
-## Cài đặt
+## 📁 Cấu trúc dự án
 
-### 1. Cài đặt dependencies
+```
+tiez-shop-fe/
+├── src/
+│   ├── components/          # Reusable components
+│   │   ├── Layout.vue       # Main layout
+│   │   ├── LoadingSpinner.vue
+│   │   └── ErrorMessage.vue
+│   ├── views/               # Page components
+│   │   ├── Home.vue         # Trang chủ
+│   │   ├── Products.vue     # Danh sách sản phẩm
+│   │   ├── ProductDetail.vue # Chi tiết sản phẩm
+│   │   ├── Cart.vue         # Giỏ hàng
+│   │   ├── Profile.vue      # Profile
+│   │   └── Orders.vue       # Đơn hàng
+│   ├── services/            # API services
+│   │   ├── api.js          # API client
+│   │   └── keycloak.js     # Authentication
+│   ├── stores/              # Pinia stores
+│   │   ├── auth.js         # Authentication store
+│   │   └── cart.js         # Cart store
+│   ├── router/              # Vue Router
+│   │   └── index.js        # Route configuration
+│   └── utils/               # Utility functions
+├── public/                  # Static assets
+└── package.json            # Dependencies
+```
 
+## 🔧 Cài đặt và chạy
+
+### Yêu cầu hệ thống
+- Node.js 16+ 
+- npm hoặc yarn
+- Backend TiezShop đang chạy trên port 8080
+
+### Cài đặt dependencies
 ```bash
+cd tiez-shop-fe
 npm install
 ```
 
-### 2. Cấu hình Keycloak
-
-1. Cài đặt và chạy Keycloak server tại `http://localhost:8080`
-2. Tạo realm tên `tiez-shop`
-3. Tạo client tên `tiez-shop-frontend` với:
-   - Client ID: `tiez-shop-frontend`
-   - Root URL: `http://localhost:5173`
-   - Valid Redirect URIs: `http://localhost:5173/*`
-   - Web Origins: `http://localhost:5173`
-
-### 3. Cập nhật cấu hình Keycloak
-
-Chỉnh sửa file `src/services/keycloak.js`:
-
-```javascript
-const keycloakConfig = {
-  url: 'http://localhost:8080', // URL Keycloak server
-  realm: 'tiez-shop', // Tên realm
-  clientId: 'tiez-shop-frontend' // Client ID
-}
-```
-
-## Chạy dự án
-
-### Development
-
+### Chạy development server
 ```bash
 npm run dev
 ```
 
-Truy cập: `http://localhost:5173`
+Ứng dụng sẽ chạy trên `http://localhost:5173`
 
-### Production
-
+### Build cho production
 ```bash
 npm run build
+```
+
+## 🔌 Tích hợp API
+
+### Endpoints được sử dụng
+
+#### Products API
+- `GET /api/products` - Lấy danh sách sản phẩm
+- `GET /api/products/{id}` - Chi tiết sản phẩm
+- `GET /api/products/featured` - Sản phẩm nổi bật
+- `GET /api/products/search` - Tìm kiếm sản phẩm
+- `GET /api/products/filter` - Lọc sản phẩm
+
+#### Brands API
+- `GET /api/brands/active` - Thương hiệu đang hoạt động
+- `GET /api/brands/{id}` - Chi tiết thương hiệu
+
+#### Categories API
+- `GET /api/categories/active` - Danh mục đang hoạt động
+- `GET /api/categories/{id}` - Chi tiết danh mục
+
+#### User API
+- `POST /user/register` - Đăng ký
+- `POST /user/login` - Đăng nhập
+- `GET /user/{id}` - Thông tin user
+- `PUT /user/{id}` - Cập nhật user
+
+### Cấu hình API
+API base URL được cấu hình trong `src/services/api.js`:
+```javascript
+const API_BASE_URL = 'http://localhost:8080'
+```
+
+## 🎯 Tính năng nổi bật
+
+### 1. Tìm kiếm và lọc thông minh
+- Tìm kiếm theo tên, mô tả, thương hiệu
+- Lọc theo giá, thương hiệu, danh mục, giới tính
+- URL parameters cho deep linking
+- Real-time filtering
+
+### 2. Responsive Design
+- Mobile-first approach
+- Breakpoints: 768px, 1920px, 2560px
+- Flexible grid layouts
+- Touch-friendly interactions
+
+### 3. Error Handling
+- Graceful error handling với retry functionality
+- Loading states cho tất cả API calls
+- Fallback data khi API không khả dụng
+- User-friendly error messages
+
+### 4. Performance Optimization
+- Lazy loading cho images
+- Pagination để giảm tải
+- Efficient state management
+- Minimal re-renders
+
+## 🔐 Authentication
+
+Tích hợp với Keycloak cho:
+- Đăng nhập/đăng xuất
+- Đăng ký tài khoản
+- Token management
+- Protected routes
+
+## 🛒 Cart Management
+
+- Thêm/xóa sản phẩm
+- Quản lý số lượng
+- Persistent storage
+- Real-time updates
+
+## 📱 Mobile Support
+
+- Responsive design
+- Touch gestures
+- Mobile-optimized navigation
+- Fast loading
+
+## 🚀 Deployment
+
+### Development
+```bash
+npm run dev
+```
+
+### Production Build
+```bash
+npm run build
+```
+
+### Preview Production Build
+```bash
 npm run preview
 ```
 
-## Cấu trúc dự án
-
-```
-src/
-├── components/          # Components tái sử dụng
-│   └── Layout.vue      # Layout chính
-├── services/           # Services
-│   └── keycloak.js     # Keycloak configuration
-├── stores/            # Pinia stores
-│   ├── auth.js        # Authentication store
-│   └── cart.js        # Shopping cart store
-├── views/             # Pages
-│   ├── Home.vue       # Trang chủ
-│   ├── Login.vue      # Đăng nhập
-│   ├── Products.vue   # Danh sách sản phẩm
-│   ├── ProductDetail.vue # Chi tiết sản phẩm
-│   ├── Cart.vue       # Giỏ hàng
-│   ├── Profile.vue    # Thông tin cá nhân
-│   └── Orders.vue     # Đơn hàng
-├── router/            # Vue Router
-│   └── index.js       # Router configuration
-├── App.vue            # Root component
-└── main.js            # Entry point
-```
-
-## Tính năng đăng nhập
-
-### Keycloak Authentication
-
-- Đăng nhập với Keycloak server
-- Tự động refresh token
-- Role-based access control
-
-### Demo Account
-
-Để test nhanh, có thể sử dụng demo account:
-- **Username**: demo@tiezshop.com
-- **Password**: demo123
-- **Role**: Customer
-
-## API Integration
-
-Dự án được thiết kế để tích hợp với backend API. Các endpoint cần thiết:
-
-- `GET /api/products` - Lấy danh sách sản phẩm
-- `GET /api/products/:id` - Lấy chi tiết sản phẩm
-- `POST /api/orders` - Tạo đơn hàng
-- `GET /api/orders` - Lấy danh sách đơn hàng
-- `PUT /api/profile` - Cập nhật thông tin cá nhân
-
-## Deployment
-
-### Vercel/Netlify
-
-1. Build project: `npm run build`
-2. Deploy thư mục `dist/`
-3. Cập nhật Keycloak configuration với production URL
-
-### Docker
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "run", "preview"]
-```
-
-## Troubleshooting
-
-### Keycloak không kết nối được
-
-1. Kiểm tra Keycloak server đang chạy
-2. Kiểm tra realm và client configuration
-3. Kiểm tra CORS settings trong Keycloak
-
-### Lỗi routing
-
-1. Đảm bảo Vue Router được cấu hình đúng
-2. Kiểm tra base URL trong production
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork repository
 2. Tạo feature branch
 3. Commit changes
-4. Push và tạo Pull Request
+4. Push to branch
+5. Tạo Pull Request
 
-## License
+## 📄 License
 
-MIT License
+MIT License - xem file LICENSE để biết thêm chi tiết.
+
+## 🆘 Support
+
+Nếu gặp vấn đề, vui lòng tạo issue trên GitHub repository.
+
+---
+
+**TiezShop Frontend** - Được xây dựng với ❤️ bằng Vue 3

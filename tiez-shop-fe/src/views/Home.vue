@@ -36,20 +36,38 @@
     <div class="products-preview">
       <div class="container">
         <h2>Sản phẩm nổi bật</h2>
-        <div class="products-grid">
+        
+        <!-- Loading state -->
+        <LoadingSpinner v-if="loading" message="Đang tải sản phẩm..." />
+        
+        <!-- Error state -->
+        <ErrorMessage v-else-if="error" :message="error" @retry="loadFeaturedProducts" />
+        
+        <!-- Products grid -->
+        <div v-else class="products-grid">
           <div v-for="product in featuredProducts" :key="product.id" class="product-card">
-            <img :src="product.image" :alt="product.name" class="product-image">
+            <div class="product-image-container">
+              <img :src="product.image" :alt="product.name" class="product-image">
+              <div v-if="product.isOnSale" class="sale-badge">
+                -{{ Math.round(product.discountPercentage) }}%
+              </div>
+            </div>
             <div class="product-info">
               <div class="product-brand">{{ product.brand }}</div>
               <h3>{{ product.name }}</h3>
-              <p class="product-price">{{ formatPrice(product.price) }}</p>
+              <div class="product-price-container">
+                <span class="product-price">{{ formatPrice(product.price) }}</span>
+                <span v-if="product.originalPrice && product.originalPrice > product.price" 
+                      class="original-price">{{ formatPrice(product.originalPrice) }}</span>
+              </div>
               <button @click="addToCart(product)" class="add-to-cart-btn">
                 Thêm vào giỏ
               </button>
             </div>
           </div>
         </div>
-        <div class="view-all">
+        
+        <div v-if="!loading && !error" class="view-all">
           <router-link to="/products" class="view-all-btn">
             Xem tất cả sản phẩm
           </router-link>
@@ -60,46 +78,84 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useCartStore } from '../stores/cart.js'
+import { productApi } from '../services/api.js'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorMessage from '../components/ErrorMessage.vue'
 
 const cartStore = useCartStore()
+const featuredProducts = ref([])
+const loading = ref(true)
+const error = ref(null)
 
-// Mock data - trong thực tế sẽ lấy từ API
-const featuredProducts = ref([
-  {
-    id: 1,
-    name: 'Nike Air Force 1',
-    price: 2890000,
-    image: 'https://via.placeholder.com/300x200?text=Nike+Air+Force+1',
-    brand: 'Nike',
-    category: 'shoes'
-  },
-  {
-    id: 2,
-    name: 'Adidas Ultraboost 22',
-    price: 4590000,
-    image: 'https://via.placeholder.com/300x200?text=Adidas+Ultraboost+22',
-    brand: 'Adidas',
-    category: 'shoes'
-  },
-  {
-    id: 3,
-    name: 'Nike Tech Fleece Hoodie',
-    price: 1890000,
-    image: 'https://via.placeholder.com/300x200?text=Nike+Tech+Fleece',
-    brand: 'Nike',
-    category: 'clothing'
-  },
-  {
-    id: 4,
-    name: 'Adidas Originals Trefoil Tee',
-    price: 890000,
-    image: 'https://via.placeholder.com/300x200?text=Adidas+Trefoil+Tee',
-    brand: 'Adidas',
-    category: 'clothing'
+// Lấy sản phẩm nổi bật từ API
+const loadFeaturedProducts = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    const response = await productApi.getFeaturedProducts(0, 8)
+    
+    if (response.result && response.result.content) {
+      featuredProducts.value = response.result.content.map(product => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        discountPercentage: product.discountPercentage,
+        isOnSale: product.isOnSale,
+        image: product.images && product.images.length > 0 
+          ? product.images[0].imageUrl 
+          : 'https://via.placeholder.com/300x200?text=No+Image',
+        brand: product.brand?.name || 'Unknown',
+        category: product.category?.name || 'Unknown',
+        description: product.description
+      }))
+    }
+  } catch (err) {
+    console.error('Error loading featured products:', err)
+    error.value = 'Không thể tải sản phẩm nổi bật'
+    
+    // Fallback to mock data if API fails
+    featuredProducts.value = [
+      {
+        id: 1,
+        name: 'Nike Air Force 1',
+        price: 2890000,
+        image: 'https://via.placeholder.com/300x200?text=Nike+Air+Force+1',
+        brand: 'Nike',
+        category: 'shoes'
+      },
+      {
+        id: 2,
+        name: 'Adidas Ultraboost 22',
+        price: 4590000,
+        image: 'https://via.placeholder.com/300x200?text=Adidas+Ultraboost+22',
+        brand: 'Adidas',
+        category: 'shoes'
+      },
+      {
+        id: 3,
+        name: 'Nike Tech Fleece Hoodie',
+        price: 1890000,
+        image: 'https://via.placeholder.com/300x200?text=Nike+Tech+Fleece',
+        brand: 'Nike',
+        category: 'clothing'
+      },
+      {
+        id: 4,
+        name: 'Adidas Originals Trefoil Tee',
+        price: 890000,
+        image: 'https://via.placeholder.com/300x200?text=Adidas+Trefoil+Tee',
+        brand: 'Adidas',
+        category: 'clothing'
+      }
+    ]
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -112,6 +168,10 @@ const addToCart = (product) => {
   cartStore.addToCart(product)
   // Có thể thêm thông báo thành công ở đây
 }
+
+onMounted(() => {
+  loadFeaturedProducts()
+})
 </script>
 
 <style scoped>
@@ -236,10 +296,32 @@ const addToCart = (product) => {
   transform: translateY(-5px);
 }
 
+.product-image-container {
+  position: relative;
+  overflow: hidden;
+}
+
 .product-image {
   width: 100%;
   height: 200px;
   object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.sale-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #e74c3c;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 .product-info {
@@ -260,11 +342,21 @@ const addToCart = (product) => {
   font-size: 1rem;
 }
 
+.product-price-container {
+  margin-bottom: 1rem;
+}
+
 .product-price {
   font-size: 1.2rem;
   font-weight: bold;
   color: #e74c3c;
-  margin-bottom: 1rem;
+}
+
+.original-price {
+  font-size: 1rem;
+  color: #7f8c8d;
+  text-decoration: line-through;
+  margin-left: 0.5rem;
 }
 
 .add-to-cart-btn {
@@ -300,6 +392,7 @@ const addToCart = (product) => {
 .view-all-btn:hover {
   background: #34495e;
 }
+
 
 @media (min-width: 1920px) {
   .features-grid {

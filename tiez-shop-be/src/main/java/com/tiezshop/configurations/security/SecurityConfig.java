@@ -16,7 +16,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
     private static final String[] SWAGGER_URLS = {"/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**"};
-    private static final String[] AUTH_URLS = {"/user/register", "/user/login"};
+    private static final String[] AUTH_URLS = {"/api/user/register", "/api/user/login"};
+    private static final String[] PUBLIC_URLS = {
+        "/api/categories/**", 
+        "/api/brands/**", 
+        "/api/products/**"
+    };
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -25,6 +30,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(SWAGGER_URLS).permitAll()
                         .requestMatchers(AUTH_URLS).permitAll()
+                        .requestMatchers(PUBLIC_URLS).permitAll()
                         .anyRequest()
                         .authenticated())
                 .oauth2ResourceServer(oauth2 ->

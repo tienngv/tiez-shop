@@ -2,6 +2,8 @@
   <div class="products">
     <div class="products-header">
       <h1>Danh sách sản phẩm</h1>
+      
+      <!-- Search and Filters -->
       <div class="search-filter">
         <input 
           v-model="searchQuery" 
@@ -9,195 +11,231 @@
           placeholder="Tìm kiếm sản phẩm..."
           class="search-input"
         >
-        <select v-model="selectedCategory" class="category-select">
+        
+        <select v-model="selectedCategory" class="filter-select">
           <option value="">Tất cả danh mục</option>
-          <option value="shoes">Giày dép</option>
-          <option value="clothing">Quần áo</option>
-          <option value="accessories">Phụ kiện</option>
-          <option value="bags">Túi xách</option>
+          <option v-for="category in categories" :key="category.id" :value="category.id">
+            {{ category.name }}
+          </option>
         </select>
         
-        <select v-model="selectedBrand" class="brand-select">
+        <select v-model="selectedBrand" class="filter-select">
           <option value="">Tất cả thương hiệu</option>
-          <option value="nike">Nike</option>
-          <option value="adidas">Adidas</option>
-          <option value="puma">Puma</option>
-          <option value="converse">Converse</option>
-          <option value="vans">Vans</option>
+          <option v-for="brand in brands" :key="brand.id" :value="brand.id">
+            {{ brand.name }}
+          </option>
         </select>
+        
+        <select v-model="selectedGender" class="filter-select">
+          <option value="">Tất cả giới tính</option>
+          <option value="Men">Nam</option>
+          <option value="Women">Nữ</option>
+          <option value="Unisex">Unisex</option>
+          <option value="Kids">Trẻ em</option>
+        </select>
+        
+        <div class="price-range">
+          <input 
+            v-model="minPrice" 
+            type="number" 
+            placeholder="Giá tối thiểu"
+            class="price-input"
+          >
+          <span>-</span>
+          <input 
+            v-model="maxPrice" 
+            type="number" 
+            placeholder="Giá tối đa"
+            class="price-input"
+          >
+        </div>
+        
+        <button @click="clearFilters" class="clear-filters-btn">
+          Xóa bộ lọc
+        </button>
+      </div>
+      
+      <!-- Results info -->
+      <div class="results-info">
+        <p v-if="!loading">
+          Hiển thị {{ filteredProducts.length }} sản phẩm 
+          (trang {{ currentPage + 1 }} / {{ totalPages }})
+        </p>
       </div>
     </div>
 
-    <div class="products-grid">
+    <!-- Loading state -->
+    <LoadingSpinner v-if="loading" message="Đang tải sản phẩm..." />
+    
+    <!-- Error state -->
+    <ErrorMessage v-else-if="error" :message="error" @retry="loadProducts(currentPage)" />
+    
+    <!-- Products grid -->
+    <div v-else-if="filteredProducts.length > 0" class="products-grid">
       <div v-for="product in filteredProducts" :key="product.id" class="product-card">
         <div class="product-image-container">
           <img :src="product.image" :alt="product.name" class="product-image">
+          <div v-if="product.isOnSale" class="sale-badge">
+            -{{ Math.round(product.discountPercentage) }}%
+          </div>
           <div class="product-overlay">
             <router-link :to="`/product/${product.id}`" class="view-details-btn">
               Xem chi tiết
             </router-link>
           </div>
         </div>
-          <div class="product-info">
-            <div class="product-brand">{{ product.brand }}</div>
-            <h3 class="product-name">{{ product.name }}</h3>
-            <p class="product-description">{{ product.description }}</p>
-            <div class="product-price">{{ formatPrice(product.price) }}</div>
-            <div class="product-rating">
-              <span class="stars">★★★★☆</span>
-              <span class="rating-text">({{ product.rating }})</span>
-            </div>
-            <button @click="addToCart(product)" class="add-to-cart-btn">
-              Thêm vào giỏ
-            </button>
+        <div class="product-info">
+          <div class="product-brand">{{ product.brand }}</div>
+          <h3 class="product-name">{{ product.name }}</h3>
+          <p class="product-description">{{ product.description }}</p>
+          <div class="product-price-container">
+            <span class="product-price">{{ formatPrice(product.price) }}</span>
+            <span v-if="product.originalPrice && product.originalPrice > product.price" 
+                  class="original-price">{{ formatPrice(product.originalPrice) }}</span>
           </div>
+          <div class="product-rating">
+            <span class="stars">★★★★☆</span>
+            <span class="rating-text">({{ product.rating }})</span>
+          </div>
+          <button @click="addToCart(product)" class="add-to-cart-btn">
+            Thêm vào giỏ
+          </button>
+        </div>
       </div>
     </div>
 
-    <div v-if="filteredProducts.length === 0" class="no-products">
+    <!-- No products found -->
+    <div v-else class="no-products">
       <p>Không tìm thấy sản phẩm nào.</p>
+      <button @click="clearFilters" class="clear-filters-btn">Xóa bộ lọc</button>
+    </div>
+    
+    <!-- Pagination -->
+    <div v-if="!loading && !error && totalPages > 1" class="pagination">
+      <button 
+        @click="prevPage" 
+        :disabled="!hasPrevPage"
+        class="pagination-btn"
+      >
+        Trước
+      </button>
+      
+      <div class="pagination-info">
+        Trang {{ currentPage + 1 }} / {{ totalPages }}
+      </div>
+      
+      <button 
+        @click="nextPage" 
+        :disabled="!hasNextPage"
+        class="pagination-btn"
+      >
+        Sau
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useCartStore } from '../stores/cart.js'
+import { productApi, brandApi, categoryApi } from '../services/api.js'
+import LoadingSpinner from '../components/LoadingSpinner.vue'
+import ErrorMessage from '../components/ErrorMessage.vue'
 
 const cartStore = useCartStore()
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const selectedBrand = ref('')
+const minPrice = ref('')
+const maxPrice = ref('')
+const selectedGender = ref('')
 
-// Mock data - trong thực tế sẽ lấy từ API
-const products = ref([
-  {
-    id: 1,
-    name: 'Nike Air Force 1',
-    price: 2890000,
-    image: 'https://via.placeholder.com/300x200?text=Nike+Air+Force+1',
-    description: 'Giày thể thao Nike Air Force 1 cổ điển, thiết kế đơn giản và thời trang',
-    category: 'shoes',
-    brand: 'Nike',
-    rating: 4.8
-  },
-  {
-    id: 2,
-    name: 'Adidas Ultraboost 22',
-    price: 4590000,
-    image: 'https://via.placeholder.com/300x200?text=Adidas+Ultraboost+22',
-    description: 'Giày chạy bộ Adidas Ultraboost với công nghệ Boost tiên tiến',
-    category: 'shoes',
-    brand: 'Adidas',
-    rating: 4.9
-  },
-  {
-    id: 3,
-    name: 'Nike Tech Fleece Hoodie',
-    price: 1890000,
-    image: 'https://via.placeholder.com/300x200?text=Nike+Tech+Fleece',
-    description: 'Áo hoodie Nike Tech Fleece ấm áp và thoải mái',
-    category: 'clothing',
-    brand: 'Nike',
-    rating: 4.7
-  },
-  {
-    id: 4,
-    name: 'Adidas Originals Trefoil Tee',
-    price: 890000,
-    image: 'https://via.placeholder.com/300x200?text=Adidas+Trefoil+Tee',
-    description: 'Áo thun Adidas Originals với logo Trefoil cổ điển',
-    category: 'clothing',
-    brand: 'Adidas',
-    rating: 4.6
-  },
-  {
-    id: 5,
-    name: 'Converse Chuck Taylor All Star',
-    price: 1590000,
-    image: 'https://via.placeholder.com/300x200?text=Converse+Chuck+Taylor',
-    description: 'Giày Converse Chuck Taylor All Star phong cách cổ điển',
-    category: 'shoes',
-    brand: 'Converse',
-    rating: 4.5
-  },
-  {
-    id: 6,
-    name: 'Puma RS-X Reinvention',
-    price: 2290000,
-    image: 'https://via.placeholder.com/300x200?text=Puma+RS-X',
-    description: 'Giày Puma RS-X với thiết kế retro-futuristic độc đáo',
-    category: 'shoes',
-    brand: 'Puma',
-    rating: 4.4
-  },
-  {
-    id: 7,
-    name: 'Vans Old Skool',
-    price: 1790000,
-    image: 'https://via.placeholder.com/300x200?text=Vans+Old+Skool',
-    description: 'Giày Vans Old Skool phong cách skateboard cổ điển',
-    category: 'shoes',
-    brand: 'Vans',
-    rating: 4.6
-  },
-  {
-    id: 8,
-    name: 'Nike Dri-FIT Training Shorts',
-    price: 1290000,
-    image: 'https://via.placeholder.com/300x200?text=Nike+Dri-FIT+Shorts',
-    description: 'Quần short Nike Dri-FIT cho tập luyện thoải mái',
-    category: 'clothing',
-    brand: 'Nike',
-    rating: 4.3
-  },
-  {
-    id: 9,
-    name: 'Adidas Backpack',
-    price: 1590000,
-    image: 'https://via.placeholder.com/300x200?text=Adidas+Backpack',
-    description: 'Ba lô Adidas với thiết kế thể thao và nhiều ngăn',
-    category: 'bags',
-    brand: 'Adidas',
-    rating: 4.5
-  },
-  {
-    id: 10,
-    name: 'Nike Cap',
-    price: 690000,
-    image: 'https://via.placeholder.com/300x200?text=Nike+Cap',
-    description: 'Mũ lưỡi trai Nike với logo Swoosh nổi bật',
-    category: 'accessories',
-    brand: 'Nike',
-    rating: 4.2
+const products = ref([])
+const brands = ref([])
+const categories = ref([])
+const loading = ref(true)
+const error = ref(null)
+const currentPage = ref(0)
+const totalPages = ref(0)
+const totalElements = ref(0)
+
+// Load brands and categories for filters
+const loadBrandsAndCategories = async () => {
+  try {
+    const [brandsResponse, categoriesResponse] = await Promise.all([
+      brandApi.getActiveBrands(),
+      categoryApi.getActiveCategories()
+    ])
+    
+    brands.value = brandsResponse.result || []
+    categories.value = categoriesResponse.result || []
+  } catch (err) {
+    console.error('Error loading brands and categories:', err)
   }
-])
+}
 
+// Load products with filters
+const loadProducts = async (page = 0) => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    let response
+    
+    if (searchQuery.value.trim()) {
+      // Search products
+      response = await productApi.searchProducts(searchQuery.value.trim(), page, 20)
+    } else {
+      // Filter products
+      const filters = {}
+      if (selectedCategory.value) filters.categoryId = selectedCategory.value
+      if (selectedBrand.value) filters.brandId = selectedBrand.value
+      if (minPrice.value) filters.minPrice = parseFloat(minPrice.value)
+      if (maxPrice.value) filters.maxPrice = parseFloat(maxPrice.value)
+      if (selectedGender.value) filters.gender = selectedGender.value
+      
+      response = await productApi.filterProducts(filters, page, 20)
+    }
+    
+    if (response.result) {
+      products.value = response.result.content || []
+      currentPage.value = response.result.number || 0
+      totalPages.value = response.result.totalPages || 0
+      totalElements.value = response.result.totalElements || 0
+    }
+  } catch (err) {
+    console.error('Error loading products:', err)
+    error.value = 'Không thể tải danh sách sản phẩm'
+    products.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// Computed properties
 const filteredProducts = computed(() => {
-  let filtered = products.value
-
-  // Filter by search query
-  if (searchQuery.value) {
-    filtered = filtered.filter(product =>
-      product.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      product.brand.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
-  }
-
-  // Filter by category
-  if (selectedCategory.value) {
-    filtered = filtered.filter(product => product.category === selectedCategory.value)
-  }
-
-  // Filter by brand
-  if (selectedBrand.value) {
-    filtered = filtered.filter(product => product.brand.toLowerCase() === selectedBrand.value.toLowerCase())
-  }
-
-  return filtered
+  return products.value.map(product => ({
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    originalPrice: product.originalPrice,
+    discountPercentage: product.discountPercentage,
+    isOnSale: product.isOnSale,
+    image: product.images && product.images.length > 0 
+      ? product.images[0].imageUrl 
+      : 'https://via.placeholder.com/300x200?text=No+Image',
+    description: product.description,
+    category: product.category?.name || 'Unknown',
+    brand: product.brand?.name || 'Unknown',
+    gender: product.gender,
+    rating: 4.5 // Mock rating for now
+  }))
 })
 
+const hasNextPage = computed(() => currentPage.value < totalPages.value - 1)
+const hasPrevPage = computed(() => currentPage.value > 0)
+
+// Methods
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -207,8 +245,53 @@ const formatPrice = (price) => {
 
 const addToCart = (product) => {
   cartStore.addToCart(product)
-  // Có thể thêm thông báo thành công ở đây
 }
+
+const clearFilters = () => {
+  searchQuery.value = ''
+  selectedCategory.value = ''
+  selectedBrand.value = ''
+  minPrice.value = ''
+  maxPrice.value = ''
+  selectedGender.value = ''
+  loadProducts(0)
+}
+
+const nextPage = () => {
+  if (hasNextPage.value) {
+    loadProducts(currentPage.value + 1)
+  }
+}
+
+const prevPage = () => {
+  if (hasPrevPage.value) {
+    loadProducts(currentPage.value - 1)
+  }
+}
+
+// Watchers
+watch([searchQuery, selectedCategory, selectedBrand, minPrice, maxPrice, selectedGender], () => {
+  loadProducts(0)
+}, { deep: true })
+
+// Lifecycle
+onMounted(() => {
+  loadBrandsAndCategories()
+  
+  // Handle URL query parameters
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('brandId')) {
+    selectedBrand.value = urlParams.get('brandId')
+  }
+  if (urlParams.get('categoryId')) {
+    selectedCategory.value = urlParams.get('categoryId')
+  }
+  if (urlParams.get('search')) {
+    searchQuery.value = urlParams.get('search')
+  }
+  
+  loadProducts(0)
+})
 </script>
 
 <style scoped>
@@ -235,9 +318,8 @@ const addToCart = (product) => {
 }
 
 .search-input,
-.category-select,
-.brand-select {
-  flex: 1;
+.filter-select,
+.price-input {
   padding: 0.75rem;
   border: 2px solid #ecf0f1;
   border-radius: 8px;
@@ -245,11 +327,52 @@ const addToCart = (product) => {
   transition: border-color 0.3s;
 }
 
+.search-input {
+  flex: 2;
+}
+
+.filter-select {
+  flex: 1;
+}
+
+.price-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.price-input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.clear-filters-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.clear-filters-btn:hover {
+  background: #c0392b;
+}
+
 .search-input:focus,
-.category-select:focus,
-.brand-select:focus {
+.filter-select:focus,
+.price-input:focus {
   outline: none;
   border-color: #3498db;
+}
+
+.results-info {
+  text-align: center;
+  margin: 1rem 0;
+  color: #7f8c8d;
 }
 
 .products-grid {
@@ -346,11 +469,33 @@ const addToCart = (product) => {
   line-height: 1.4;
 }
 
+.product-price-container {
+  margin-bottom: 0.5rem;
+}
+
 .product-price {
   font-size: 1.2rem;
   font-weight: bold;
   color: #e74c3c;
-  margin-bottom: 0.5rem;
+}
+
+.original-price {
+  font-size: 1rem;
+  color: #7f8c8d;
+  text-decoration: line-through;
+  margin-left: 0.5rem;
+}
+
+.sale-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #e74c3c;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
 }
 
 .product-rating {
@@ -392,6 +537,45 @@ const addToCart = (product) => {
   color: #7f8c8d;
 }
 
+.no-products .clear-filters-btn {
+  margin-top: 1rem;
+}
+
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.pagination-btn {
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.pagination-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: #7f8c8d;
+  font-weight: bold;
+}
+
 @media (min-width: 1920px) {
   .products-grid {
     grid-template-columns: repeat(5, 1fr);
@@ -407,11 +591,26 @@ const addToCart = (product) => {
 @media (max-width: 768px) {
   .search-filter {
     flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .price-range {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .price-input {
+    min-width: auto;
   }
   
   .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1rem;
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 }
 </style>

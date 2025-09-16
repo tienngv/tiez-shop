@@ -16,11 +16,14 @@
             <div class="nav-dropdown">
               <span class="nav-link dropdown-toggle">Thương hiệu</span>
               <div class="dropdown-menu">
-                <router-link to="/products?brand=nike" class="dropdown-item">Nike</router-link>
-                <router-link to="/products?brand=adidas" class="dropdown-item">Adidas</router-link>
-                <router-link to="/products?brand=puma" class="dropdown-item">Puma</router-link>
-                <router-link to="/products?brand=converse" class="dropdown-item">Converse</router-link>
-                <router-link to="/products?brand=vans" class="dropdown-item">Vans</router-link>
+                <router-link 
+                  v-for="brand in brands" 
+                  :key="brand.id"
+                  :to="`/products?brandId=${brand.id}`" 
+                  class="dropdown-item"
+                >
+                  {{ brand.name }}
+                </router-link>
               </div>
             </div>
           </nav>
@@ -42,6 +45,7 @@
             </div>
             
             <div v-else class="auth-buttons">
+              <button @click="handleRegister" class="register-btn">Đăng ký</button>
               <button @click="handleLogin" class="login-btn">Đăng nhập</button>
             </div>
           </div>
@@ -76,10 +80,9 @@
           <div class="footer-section">
             <h4>Thương hiệu</h4>
             <ul>
-              <li><router-link to="/products?brand=nike">Nike</router-link></li>
-              <li><router-link to="/products?brand=adidas">Adidas</router-link></li>
-              <li><router-link to="/products?brand=puma">Puma</router-link></li>
-              <li><router-link to="/products?brand=converse">Converse</router-link></li>
+              <li v-for="brand in brands.slice(0, 4)" :key="brand.id">
+                <router-link :to="`/products?brandId=${brand.id}`">{{ brand.name }}</router-link>
+              </li>
             </ul>
           </div>
           <div class="footer-section">
@@ -101,20 +104,60 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
 import { useCartStore } from '../stores/cart.js'
-import { login, logout } from '../services/keycloak.js'
+import { brandApi } from '../services/api.js'
 
 const authStore = useAuthStore()
 const cartStore = useCartStore()
+const router = useRouter()
+const brands = ref([])
+
+// Load brands for dropdown
+const loadBrands = async () => {
+  try {
+    const response = await brandApi.getActiveBrands()
+    brands.value = response.result || []
+  } catch (error) {
+    console.error('Error loading brands:', error)
+    // Fallback to static brands
+    brands.value = [
+      { id: 'nike', name: 'Nike' },
+      { id: 'adidas', name: 'Adidas' },
+      { id: 'puma', name: 'Puma' },
+      { id: 'converse', name: 'Converse' },
+      { id: 'vans', name: 'Vans' }
+    ]
+  }
+}
+
+const handleRegister = () => {
+  // Redirect to register page
+  router.push('/register')
+}
 
 const handleLogin = () => {
-  login()
+  // Redirect directly to Keycloak
+  const keycloakUrl = `http://localhost:8180/realms/tiez-shop/protocol/openid-connect/auth?` +
+    `client_id=tienngv&` +
+    `redirect_uri=${encodeURIComponent('http://localhost:5173/callback')}&` +
+    `response_type=code&` +
+    `scope=openid`
+  
+  console.log('Redirecting to Keycloak:', keycloakUrl)
+  window.location.href = keycloakUrl
 }
 
 const handleLogout = () => {
-  logout()
+  // Redirect to logout page instead of calling auth store logout
+  router.push('/logout')
 }
+
+onMounted(() => {
+  loadBrands()
+})
 </script>
 
 <style scoped>
@@ -264,7 +307,8 @@ const handleLogout = () => {
 }
 
 .logout-btn,
-.login-btn {
+.login-btn,
+.register-btn {
   background: #3498db;
   color: white;
   border: none;
@@ -275,8 +319,18 @@ const handleLogout = () => {
 }
 
 .logout-btn:hover,
-.login-btn:hover {
+.login-btn:hover,
+.register-btn:hover {
   background: #2980b9;
+}
+
+.register-btn {
+  background: #27ae60;
+  margin-right: 0.5rem;
+}
+
+.register-btn:hover {
+  background: #229954;
 }
 
 /* Main Content */

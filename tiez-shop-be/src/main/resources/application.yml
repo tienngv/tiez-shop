@@ -38,7 +38,7 @@ logging:
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
 keycloak:
   client-id: tienngv
-  client-secret: bBnCGpKNDa2rhgBz81NZi3KFedJ1ftLu
+  client-secret: 6eRqOoKNobwIoRTwLWg3JX3uz7Opl6hc
   realm: tiez-shop
   base-url: http://localhost:8180
   registration-url: "${keycloak.base-url}/admin/realms/${keycloak.realm}/users"
